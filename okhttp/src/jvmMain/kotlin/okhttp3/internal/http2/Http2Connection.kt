@@ -180,6 +180,8 @@ class Http2Connection internal constructor(builder: Builder) : Closeable {
   internal fun removeStream(streamId: Int): Http2Stream? {
     val stream = streams.remove(streamId)
 
+    Exception("removeStream").printStackTrace()
+
     // The removed stream may be blocked on a connection-wide window update.
     notifyAll()
 
@@ -339,6 +341,7 @@ class Http2Connection internal constructor(builder: Builder) : Closeable {
     streamId: Int,
     errorCode: ErrorCode
   ) {
+    Exception("writeSynResetLater").printStackTrace()
     writerQueue.execute("$connectionName[$streamId] writeSynReset") {
       try {
         writeSynReset(streamId, errorCode)
@@ -649,7 +652,7 @@ class Http2Connection internal constructor(builder: Builder) : Closeable {
       }
       val dataStream = getStream(streamId)
       if (dataStream == null) {
-        writeSynResetLater(streamId, ErrorCode.PROTOCOL_ERROR)
+//        writeSynResetLater(streamId, ErrorCode.PROTOCOL_ERROR)
         updateConnectionFlowControl(length.toLong())
         source.skip(length.toLong())
         return

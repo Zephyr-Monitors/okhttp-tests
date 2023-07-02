@@ -243,6 +243,9 @@ class Http2Stream internal constructor(
     if (!closeInternal(rstStatusCode, errorException)) {
       return // Already closed.
     }
+
+    Exception("close").printStackTrace()
+
     connection.writeSynReset(id, rstStatusCode)
   }
 
@@ -491,7 +494,7 @@ class Http2Stream internal constructor(
       // But delay updating the stream flow control until that stream has been
       // consumed
       updateConnectionFlowControl(byteCount)
-      
+
       // Notify that buffer size changed
       connection.flowControlListener.receivingStreamWindowChanged(id, readBytes, readBuffer.size)
     }

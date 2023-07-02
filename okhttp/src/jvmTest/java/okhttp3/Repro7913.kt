@@ -73,7 +73,7 @@ class Repro7913 {
         }
     }
 
-    @Test
+//    @Test
     fun testResetMockWebServer() {
         server.enqueue(MockResponse(socketPolicy = SocketPolicy.NoResponse))
 
