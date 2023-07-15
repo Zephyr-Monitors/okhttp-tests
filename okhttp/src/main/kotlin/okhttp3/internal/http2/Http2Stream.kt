@@ -18,6 +18,8 @@ package okhttp3.internal.http2
 import okhttp3.Headers
 import okhttp3.internal.EMPTY_HEADERS
 import okhttp3.internal.assertThreadDoesntHoldLock
+import okhttp3.internal.http.CallServerInterceptor
+import okhttp3.internal.http.CallServerInterceptor.Companion.shouldIgnoreAndWaitForRealResponse
 import okhttp3.internal.notifyAll
 import okhttp3.internal.toHeaderList
 import okhttp3.internal.wait
@@ -137,6 +139,7 @@ class Http2Stream internal constructor(
     readTimeout.enter()
     try {
       while (headersQueue.isEmpty() && errorCode == null) {
+        println("Http2Stream.waitForIo")
         waitForIo()
       }
     } finally {
@@ -173,10 +176,12 @@ class Http2Stream internal constructor(
    */
   @Throws(IOException::class)
   fun writeHeaders(responseHeaders: List<Header>, outFinished: Boolean, flushHeaders: Boolean) {
+println("Http2Stream.writeHeaders")
     this@Http2Stream.assertThreadDoesntHoldLock()
 
     var flushHeaders = flushHeaders
     synchronized(this) {
+println("Http2Stream.hasResponseHeaders = true 1")
       this.hasResponseHeaders = true
       if (outFinished) {
         this.sink.finished = true
@@ -278,23 +283,34 @@ class Http2Stream internal constructor(
 
   /** Accept headers from the network and store them until the client calls [takeHeaders]. */
   fun receiveHeaders(headers: Headers, inFinished: Boolean) {
+println("Http2Stream.receiveHeaders")
     this@Http2Stream.assertThreadDoesntHoldLock()
 
     val open: Boolean
     synchronized(this) {
+      println("Http2Stream.hasResponseHeaders $hasResponseHeaders")
+      println("Http2Stream.inFinished $inFinished")
       if (!hasResponseHeaders || !inFinished) {
-        hasResponseHeaders = true
+println("Http2Stream.hasResponseHeaders = true 2")
+        val status = headers[":status"]?.toInt()
+        if (status == null || !shouldIgnoreAndWaitForRealResponse(status)) {
+          hasResponseHeaders = true
+        }
         headersQueue += headers
       } else {
+println("Http2Stream.trailers")
         this.source.trailers = headers
       }
       if (inFinished) {
+println("Http2Stream.inFinished")
         this.source.finished = true
       }
+println("Http2Stream.open = $isOpen")
       open = isOpen
       notifyAll()
     }
     if (!open) {
+println("Http2Stream.removeStream")
       connection.removeStream(id)
     }
   }

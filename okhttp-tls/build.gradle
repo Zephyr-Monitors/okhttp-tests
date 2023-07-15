@@ -9,6 +9,7 @@ jar {
 dependencies {
   api deps.okio
   implementation project(':okhttp')
+  implementation project(':okhttp-logging-interceptor')
   compileOnly deps.jsr305
   compileOnly deps.animalSniffer
 

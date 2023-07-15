@@ -37,7 +37,7 @@ import okhttp3.Response
  * The format of the logs created by this class should not be considered stable and may change
  * slightly between releases. If you need a stable logging format, use your own event listener.
  */
-class LoggingEventListener private constructor(
+open class LoggingEventListener private constructor(
   private val logger: HttpLoggingInterceptor.Logger
 ) : EventListener() {
   private var startNs: Long = 0

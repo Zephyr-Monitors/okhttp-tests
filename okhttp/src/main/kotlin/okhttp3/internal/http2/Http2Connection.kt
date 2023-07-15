@@ -659,6 +659,8 @@ class Http2Connection internal constructor(builder: Builder) : Closeable {
       associatedStreamId: Int,
       headerBlock: List<Header>
     ) {
+      println("Http2Connection.headers " + headerBlock)
+
       if (pushedStream(streamId)) {
         pushHeadersLater(streamId, headerBlock, inFinished)
         return
@@ -666,6 +668,8 @@ class Http2Connection internal constructor(builder: Builder) : Closeable {
       val stream: Http2Stream?
       synchronized(this@Http2Connection) {
         stream = getStream(streamId)
+
+        println("Http2Connection.stream " + stream)
 
         if (stream == null) {
           // If we're shutdown, don't bother with this stream.

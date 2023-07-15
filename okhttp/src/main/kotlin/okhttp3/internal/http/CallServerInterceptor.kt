@@ -91,6 +91,7 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
     try {
       if (responseBuilder == null) {
         responseBuilder = exchange.readResponseHeaders(expectContinue = false)!!
+println("CallServerInterceptor.responseBuilder " + responseBuilder?.code + " " + responseBuilder?.headers?.build()?.get(":status"))
         if (invokeStartEvent) {
           exchange.responseHeadersStart()
           invokeStartEvent = false
@@ -104,8 +105,12 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
           .build()
       var code = response.code
 
-      if (shouldIgnoreAndWaitForRealResponse(code)) {
+      val shouldIgnoreAndWaitForRealResponse = shouldIgnoreAndWaitForRealResponse(code)
+println("CallServerInterceptor.shouldIgnoreAndWaitForRealResponse " + shouldIgnoreAndWaitForRealResponse)
+      if (shouldIgnoreAndWaitForRealResponse) {
+println("CallServerInterceptor.readResponseHeaders")
         responseBuilder = exchange.readResponseHeaders(expectContinue = false)!!
+println("< CallServerInterceptor.readResponseHeaders " + responseBuilder.code + " " + responseBuilder.headers.build())
         if (invokeStartEvent) {
           exchange.responseHeadersStart()
         }
@@ -148,16 +153,18 @@ class CallServerInterceptor(private val forWebSocket: Boolean) : Interceptor {
     }
   }
 
-  private fun shouldIgnoreAndWaitForRealResponse(code: Int): Boolean = when {
-    // Server sent a 100-continue even though we did not request one. Try again to read the
-    // actual response status.
-    code == 100 -> true
+  companion object {
+    internal fun shouldIgnoreAndWaitForRealResponse(code: Int): Boolean = when {
+      // Server sent a 100-continue even though we did not request one. Try again to read the
+      // actual response status.
+      code == 100 -> true
 
-    // Handle Processing (102) & Early Hints (103) and any new codes without failing
-    // 100 and 101 are the exceptions with different meanings
-    // But Early Hints not currently exposed
-    code in (102 until 200) -> true
+      // Handle Processing (102) & Early Hints (103) and any new codes without failing
+      // 100 and 101 are the exceptions with different meanings
+      // But Early Hints not currently exposed
+      code in (102 until 200) -> true
 
-    else -> false
+      else -> false
+    }
   }
 }
