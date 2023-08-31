@@ -191,7 +191,8 @@ class Http2ConnectionTest {
     peer.sendFrame().headers(false, 3, headerEntries("a", "apple"))
     peer.sendFrame().data(false, 3, data(1024), 1024)
     peer.acceptFrame() // RST_STREAM
-    peer.sendFrame().data(true, 3, data(1024), 1024)
+    peer.sendFrame().data(false, 3, data(1024), 1024)
+        peer.sendFrame().data(false, 3, data(1024), 1024)
     peer.acceptFrame() // RST_STREAM
     peer.play()
     val connection = connect(peer)
@@ -204,7 +205,9 @@ class Http2ConnectionTest {
     assertThat(frame1.type).isEqualTo(Http2.TYPE_HEADERS)
     val frame2 = peer.takeFrame()
     assertThat(frame2.type).isEqualTo(Http2.TYPE_RST_STREAM)
-    assertThat(peer.pollFrame()).isNull()
+        assertThat(connection.openStreamCount()).isEqualTo(0)
+        val frame3 = peer.takeFrame()
+     assertThat(frame3.type).isNotEqualTo(Http2.TYPE_RST_STREAM)
     assertThat(connection.readBytes.acknowledged).isEqualTo(0L)
     assertThat(connection.readBytes.total).isEqualTo(2048L)
   }
